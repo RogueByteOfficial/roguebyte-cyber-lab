@@ -1,0 +1,76 @@
+services:
+  # Web and API Management Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: roguebyte_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgres://rogue_admin:rogue_secure_password_example@postgres:5432/roguebyte_lab
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=roguebyte_example_jwt_secret_change_in_production_min_32_chars
+      - LAB_ISOLATED_NETWORK_NAME=rogue_lab_net
+    networks:
+      - rogue_mgmt_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # Relational Database: PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: roguebyte_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rogue_admin
+      POSTGRES_PASSWORD: rogue_secure_password_example
+      POSTGRES_DB: roguebyte_lab
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - rogue_mgmt_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rogue_admin -d roguebyte_lab"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # In-memory Cache & Queue: Redis
+  redis:
+    image: redis:7-alpine
+    container_name: roguebyte_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - rogue_mgmt_net
+
+# Strict Network Segmentation
+networks:
+  # Management network for API, DB, and internal metrics
+  rogue_mgmt_net:
+    driver: bridge
+    internal: false
+
+  # Ephemeral Lab Network for student training targets (NO INTERNET ACCESS)
+  rogue_lab_net:
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
+
+volumes:
+  pgdata:
+  redisdata:

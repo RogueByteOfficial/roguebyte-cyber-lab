@@ -1,0 +1,8 @@
+{
+  "name": "RogueByte Cyber Lab",
+  "description": "منصة تعليمية متكاملة لتدريب طلاب الأمن السيبراني والهواة على اختبار الاختراق الأخلاقي، أمن الويب، أمن الشبكات، وتحليل الأنظمة والدفاع الرقمي.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
